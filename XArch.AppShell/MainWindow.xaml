@@ -1,0 +1,104 @@
+﻿<Window x:Class="XArch.AppShell.MainWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:local="clr-namespace:XArch.AppShell"
+        mc:Ignorable="d"
+        Title="Atlas Studio" Width="1200" Height="800">
+
+    <DockPanel>
+
+        <!-- Menu Bar -->
+        <Menu DockPanel.Dock="Top">
+            <MenuItem Header="_File">
+                <MenuItem Header="New Project" Click="NewProject_Click"/>
+                <MenuItem Header="Open Project..." Click="OpenProject_Click"/>
+                <Separator/>
+                <MenuItem Header="Save"/>
+                <MenuItem Header="Exit"/>
+            </MenuItem>
+            <MenuItem Header="_Edit"/>
+            <MenuItem Header="_View"/>
+            <MenuItem Header="_Help"/>
+        </Menu>
+
+        <!-- Status Bar -->
+        <StatusBar DockPanel.Dock="Bottom">
+            <StatusBarItem Content="Ready."/>
+            <StatusBarItem Content="Map: world_map"/>
+            <StatusBarItem Content="User: admin" HorizontalAlignment="Right"/>
+        </StatusBar>
+
+        <!-- Main Body -->
+        <Grid>
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="250" MinWidth="50" MaxWidth="350"/>
+                <!-- Project Explorer -->
+                <ColumnDefinition Width="5"/>
+                <!-- Splitter -->
+                <ColumnDefinition Width="*" MinWidth="50"/>
+                <!-- Main Content -->
+                <ColumnDefinition Width="5"/>
+                <!-- Splitter -->
+                <ColumnDefinition Width="250" MinWidth="50" MaxWidth="350"/>
+                <!-- Properties -->
+            </Grid.ColumnDefinitions>
+            <Grid.RowDefinitions>
+                <RowDefinition Height="*"/>
+                <!-- Main Panels -->
+                <RowDefinition Height="5"/>
+                <!-- Splitter -->
+                <RowDefinition Height="75" MinHeight="50" MaxHeight="150" />
+                <!-- Output Panel -->
+            </Grid.RowDefinitions>
+
+            <!-- Project Explorer -->
+            <Border Grid.Column="0" Grid.Row="0" Grid.RowSpan="3" BorderBrush="Gray" BorderThickness="1">
+                <TreeView Margin="4">
+                    <TreeViewItem Header="Maps">
+                        <TreeViewItem Header="world_map.kmap"/>
+                    </TreeViewItem>
+                    <TreeViewItem Header="Lore">
+                        <TreeViewItem Header="gods.md"/>
+                    </TreeViewItem>
+                </TreeView>
+            </Border>
+
+            <!-- Vertical Splitter -->
+            <GridSplitter Grid.Column="1" Grid.Row="0" Grid.RowSpan="3" Width="5" Background="DimGray" HorizontalAlignment="Stretch"/>
+
+            <!-- Main Editor TabControl -->
+            <Border Grid.Column="2" Grid.Row="0" BorderBrush="Gray" BorderThickness="1">
+                <TabControl x:Name="MainTabControl" Margin="2">
+                    <TabItem Header="Untitled">
+                        <TextBlock Text="Main Editor Area" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                    </TabItem>
+                </TabControl>
+            </Border>
+
+            <!-- Vertical Splitter -->
+            <GridSplitter Grid.Column="3" Grid.Row="0" Grid.RowSpan="3" Width="5" Background="DimGray" HorizontalAlignment="Stretch"/>
+
+            <!-- Property Panel -->
+            <Border Grid.Column="4" Grid.Row="0" Grid.RowSpan="3" BorderBrush="Gray" BorderThickness="1">
+                <StackPanel Margin="4">
+                    <TextBlock Text="Properties" FontWeight="Bold" Margin="0,0,0,4"/>
+                    <TextBlock Text="(Selection info here)"/>
+                </StackPanel>
+            </Border>
+
+            <!-- Horizontal Splitter -->
+            <GridSplitter Grid.Column="2" Grid.Row="1" Height="5" Background="DimGray" VerticalAlignment="Stretch"/>
+
+            <!-- Output Panel -->
+            <Border Grid.Column="2" Grid.Row="2" BorderBrush="Gray" BorderThickness="1">
+                <TextBox Text="Build started...\nAll systems operational."
+                         Margin="2" 
+                         IsReadOnly="True"
+                         AcceptsReturn="True"
+                         VerticalScrollBarVisibility="Auto"/>
+            </Border>
+        </Grid>
+    </DockPanel>
+</Window>
