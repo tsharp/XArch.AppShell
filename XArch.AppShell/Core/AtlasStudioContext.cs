@@ -3,7 +3,7 @@
 using XArch.AppShell.Events;
 using XArch.AppShell.Sdk;
 
-namespace XArch.AppShell
+namespace XArch.AppShell.Core
 {
     internal class AtlasStudioContext
     {

@@ -3,8 +3,10 @@ using System.Windows.Controls;
 
 using Microsoft.Extensions.DependencyInjection;
 
-using XArch.AppShell;
+using XArch.AppShell.Controls.ProjectExplorer;
+using XArch.AppShell.Core;
 using XArch.AppShell.Framework.UI;
+using XArch.AppShell.Providers;
 using XArch.AppShell.Sdk;
 
 namespace XArch.AppShell
@@ -17,7 +19,13 @@ namespace XArch.AppShell
         public MainWindow()
         {
             InitializeComponent();
-            AtlasStudioContext.Current.Initialize();
+            Startup();
+        }
+
+        private void Startup()
+        {
+            MenuManager menuManager = App.Services.GetRequiredService<MenuManager>();
+            menuManager.Build(AppMenu);
         }
 
         private void NewProject_Click(object sender, RoutedEventArgs e)
@@ -64,10 +72,14 @@ namespace XArch.AppShell
             var control = view.GetControl();
 
             AddEditorTab("test.md", control);
-
         }
 
         private void AddEditorTab(string title, UIElement control)
+        {
+            AddTabItem(MainTabControl, title, control);
+        }
+
+        private void AddTabItem(TabControl tabControl, string title, UIElement control)
         {
             var tab = new TabItem
             {
@@ -75,8 +87,8 @@ namespace XArch.AppShell
                 Content = control
             };
 
-            MainTabControl.Items.Add(tab);
-            MainTabControl.SelectedItem = tab;
+            tabControl.Items.Add(tab);
+            tabControl.SelectedItem = tab;
         }
     }
 }

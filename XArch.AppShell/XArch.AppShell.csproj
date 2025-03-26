@@ -14,9 +14,11 @@
   </ItemGroup>
 
   <ItemGroup>
+    <ProjectReference Include="..\XArch.AppShell.Controls\XArch.AppShell.Controls.csproj" />
     <ProjectReference Include="..\XArch.AppShell.Framework\XArch.AppShell.Framework.csproj" />
     <ProjectReference Include="..\XArch.AppShell.Markdown\XArch.AppShell.Markdown.csproj" />
     <ProjectReference Include="..\XArch.AppShell.Sdk\XArch.AppShell.Sdk.csproj" />
+    <ProjectReference Include="..\XArch.AppShell.TileEditor\XArch.AppShell.TileEditor.csproj" />
   </ItemGroup>
 
 </Project>

@@ -4,24 +4,13 @@
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:local="clr-namespace:XArch.AppShell"
+        xmlns:project="clr-namespace:XArch.AppShell.Controls.ProjectExplorer;assembly=XArch.AppShell.Controls"
         mc:Ignorable="d"
         Title="Atlas Studio" Width="1200" Height="800">
 
     <DockPanel>
-
         <!-- Menu Bar -->
-        <Menu DockPanel.Dock="Top">
-            <MenuItem Header="_File">
-                <MenuItem Header="New Project" Click="NewProject_Click"/>
-                <MenuItem Header="Open Project..." Click="OpenProject_Click"/>
-                <Separator/>
-                <MenuItem Header="Save"/>
-                <MenuItem Header="Exit"/>
-            </MenuItem>
-            <MenuItem Header="_Edit"/>
-            <MenuItem Header="_View"/>
-            <MenuItem Header="_Help"/>
-        </Menu>
+        <Menu DockPanel.Dock="Top" Name="AppMenu" />
 
         <!-- Status Bar -->
         <StatusBar DockPanel.Dock="Bottom">
@@ -44,6 +33,7 @@
                 <ColumnDefinition Width="250" MinWidth="50" MaxWidth="350"/>
                 <!-- Properties -->
             </Grid.ColumnDefinitions>
+            
             <Grid.RowDefinitions>
                 <RowDefinition Height="*"/>
                 <!-- Main Panels -->
@@ -54,39 +44,29 @@
             </Grid.RowDefinitions>
 
             <!-- Project Explorer -->
-            <Border Grid.Column="0" Grid.Row="0" Grid.RowSpan="3" BorderBrush="Gray" BorderThickness="1">
-                <TreeView Margin="4">
-                    <TreeViewItem Header="Maps">
-                        <TreeViewItem Header="world_map.kmap"/>
-                    </TreeViewItem>
-                    <TreeViewItem Header="Lore">
-                        <TreeViewItem Header="gods.md"/>
-                    </TreeViewItem>
-                </TreeView>
-            </Border>
+            <TabControl Grid.Column="0" Grid.Row="0" Grid.RowSpan="3" x:Name="LeftSideTabs" TabStripPlacement="Bottom">
+            </TabControl>
 
             <!-- Vertical Splitter -->
             <GridSplitter Grid.Column="1" Grid.Row="0" Grid.RowSpan="3" Width="5" Background="DimGray" HorizontalAlignment="Stretch"/>
 
             <!-- Main Editor TabControl -->
             <Border Grid.Column="2" Grid.Row="0" BorderBrush="Gray" BorderThickness="1">
-                <TabControl x:Name="MainTabControl" Margin="2">
-                    <TabItem Header="Untitled">
-                        <TextBlock Text="Main Editor Area" HorizontalAlignment="Center" VerticalAlignment="Center"/>
-                    </TabItem>
-                </TabControl>
+                <TabControl x:Name="MainTabControl" Margin="2" />
             </Border>
 
             <!-- Vertical Splitter -->
             <GridSplitter Grid.Column="3" Grid.Row="0" Grid.RowSpan="3" Width="5" Background="DimGray" HorizontalAlignment="Stretch"/>
 
             <!-- Property Panel -->
-            <Border Grid.Column="4" Grid.Row="0" Grid.RowSpan="3" BorderBrush="Gray" BorderThickness="1">
-                <StackPanel Margin="4">
-                    <TextBlock Text="Properties" FontWeight="Bold" Margin="0,0,0,4"/>
-                    <TextBlock Text="(Selection info here)"/>
-                </StackPanel>
-            </Border>
+            <TabControl Grid.Column="4" Grid.Row="0" x:Name="RightSideTabs" TabStripPlacement="Bottom">
+                <TabItem Header="Properties">
+                    <StackPanel Margin="4">
+                        <TextBlock Text="Properties" FontWeight="Bold" Margin="0,0,0,4"/>
+                        <TextBlock Text="(Selection info here)"/>
+                    </StackPanel>
+                </TabItem>
+            </TabControl>
 
             <!-- Horizontal Splitter -->
             <GridSplitter Grid.Column="2" Grid.Row="1" Height="5" Background="DimGray" VerticalAlignment="Stretch"/>

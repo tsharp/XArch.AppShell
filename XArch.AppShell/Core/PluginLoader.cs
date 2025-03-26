@@ -5,36 +5,51 @@ using Microsoft.Extensions.DependencyInjection;
 
 using XArch.AppShell.Framework;
 
-namespace XArch.AppShell
+namespace XArch.AppShell.Core
 {
     public static class PluginLoader
     {
-        public static void LoadPlugins(IServiceCollection services)
+        public static IAtlasStudioPlugin[] LoadPlugins(IServiceCollection services)
         {
+            List<IAtlasStudioPlugin> plugins = new List<IAtlasStudioPlugin>();
+
             var assemblies = GetAssembliesToScan();
+            IList<Type> activatedPlugins = new List<Type>();
+
+            plugins.AddRange(LoadPlugins(Assembly.GetExecutingAssembly(), services));
 
             foreach (var asm in assemblies)
             {
-                foreach (var type in asm.GetTypes())
+                plugins.AddRange(LoadPlugins(asm, services));
+            }
+
+            return plugins.ToArray();
+        }
+
+        private static IAtlasStudioPlugin[] LoadPlugins(Assembly assembly, IServiceCollection services)
+        {
+            List<IAtlasStudioPlugin> plugins = new List<IAtlasStudioPlugin>();
+
+            foreach (var type in assembly.GetTypes())
+            {
+                if (!typeof(IAtlasStudioPlugin).IsAssignableFrom(type) || type.IsAbstract || !type.IsClass)
+                    continue;
+                var pluginAttr = type.GetCustomAttribute<AtlasStudioPluginAttribute>();
+                if (pluginAttr == null || pluginAttr.Enabled == false)
+                    continue; // Must be explicitly marked
+                try
                 {
-                    if (!typeof(IAtlasStudioPlugin).IsAssignableFrom(type) || type.IsAbstract || !type.IsClass)
-                        continue;
-
-                    var pluginAttr = type.GetCustomAttribute<AtlasStudioPluginAttribute>();
-                    if (pluginAttr == null || pluginAttr.Enabled == false)
-                        continue; // Must be explicitly marked
-
-                    try
-                    {
-                        var plugin = (IAtlasStudioPlugin)Activator.CreateInstance(type)!;
-                        plugin.RegisterServices(services);
-                    }
-                    catch (Exception ex)
-                    {
-                        // Optional: log failure to load plugin
-                    }
+                    var plugin = (IAtlasStudioPlugin)Activator.CreateInstance(type)!;
+                    plugin.RegisterServices(services);
+                    plugins.Add(plugin);
+                }
+                catch (Exception ex)
+                {
+                    // Optional: log failure to load plugin
                 }
             }
+
+            return plugins.ToArray();
         }
 
         private static IEnumerable<Assembly> GetAssembliesToScan()
@@ -77,7 +92,7 @@ namespace XArch.AppShell
                 .Where(a => !a.IsDynamic && !string.IsNullOrEmpty(a.Location) && a.GetName().Name.StartsWith("XArch.AppShell."))
                 .ToList();
 
-            return loaded;
+            return loaded.Distinct();
         }
     }
 }
