@@ -5,80 +5,46 @@
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:local="clr-namespace:XArch.AppShell"
         xmlns:project="clr-namespace:XArch.AppShell.Controls.ProjectExplorer;assembly=XArch.AppShell.Controls"
+        xmlns:fluent="urn:fluent-ribbon"
         mc:Ignorable="d"
         Title="Atlas Studio" Width="1200" Height="800">
+    <Grid>
+        <Grid.RowDefinitions>
+            <!-- Menu & Ribbon -->
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="Auto" />
+            
+            <!-- Main Content -->
+            <RowDefinition Height="*" />
 
-    <DockPanel>
-        <!-- Menu Bar -->
-        <Menu DockPanel.Dock="Top" Name="AppMenu" />
+            <!-- Status Bar -->
+            <RowDefinition Height="Auto" />
+        </Grid.RowDefinitions>
+
+        <!-- Menu -->
+        <Menu x:Name="AppMenu" Grid.Row="0" />
+
+        <!-- Ribbon -->
+        <TabControl Background="#eee" BorderThickness="0" Padding="4" x:Name="AppRibbon" Grid.Row="1" Visibility="Collapsed">
+            <TabItem Header="Home">
+                <ScrollViewer VerticalScrollBarVisibility="Auto">
+                    <WrapPanel Margin="4" Orientation="Horizontal" ItemHeight="24" ItemWidth="24">
+                        <Button Content="🟢" ToolTip="Green" Width="16" Height="16" />
+                        <Button Content="⚫" ToolTip="Grey" Width="16" Height="16" />
+                        <Button Content="⚙" ToolTip="Settings" Width="16" Height="16" />
+                        <!-- Add more small buttons -->
+                    </WrapPanel>
+                </ScrollViewer>
+            </TabItem>
+        </TabControl>
+
+        <!-- Main Content Placeholder -->
+        <local:AppShellDock x:Name="AppDock" Grid.Row="2" />
 
         <!-- Status Bar -->
-        <StatusBar DockPanel.Dock="Bottom">
-            <StatusBarItem Content="Ready."/>
-            <StatusBarItem Content="Map: world_map"/>
-            <StatusBarItem Content="User: admin" HorizontalAlignment="Right"/>
+        <StatusBar x:Name="AppStatusBar" Grid.Row="3">
+            <StatusBarItem Content="Ready" />
+            <StatusBarItem HorizontalAlignment="Right" Content="{Binding StatusMessage}" />
         </StatusBar>
-
-        <!-- Main Body -->
-        <Grid>
-            <Grid.ColumnDefinitions>
-                <ColumnDefinition Width="250" MinWidth="50" MaxWidth="350"/>
-                <!-- Project Explorer -->
-                <ColumnDefinition Width="5"/>
-                <!-- Splitter -->
-                <ColumnDefinition Width="*" MinWidth="50"/>
-                <!-- Main Content -->
-                <ColumnDefinition Width="5"/>
-                <!-- Splitter -->
-                <ColumnDefinition Width="250" MinWidth="50" MaxWidth="350"/>
-                <!-- Properties -->
-            </Grid.ColumnDefinitions>
-            
-            <Grid.RowDefinitions>
-                <RowDefinition Height="*"/>
-                <!-- Main Panels -->
-                <RowDefinition Height="5"/>
-                <!-- Splitter -->
-                <RowDefinition Height="75" MinHeight="50" MaxHeight="150" />
-                <!-- Output Panel -->
-            </Grid.RowDefinitions>
-
-            <!-- Project Explorer -->
-            <TabControl Grid.Column="0" Grid.Row="0" Grid.RowSpan="3" x:Name="LeftSideTabs" TabStripPlacement="Bottom">
-            </TabControl>
-
-            <!-- Vertical Splitter -->
-            <GridSplitter Grid.Column="1" Grid.Row="0" Grid.RowSpan="3" Width="5" Background="DimGray" HorizontalAlignment="Stretch"/>
-
-            <!-- Main Editor TabControl -->
-            <Border Grid.Column="2" Grid.Row="0" BorderBrush="Gray" BorderThickness="1">
-                <TabControl x:Name="MainTabControl" Margin="2" />
-            </Border>
-
-            <!-- Vertical Splitter -->
-            <GridSplitter Grid.Column="3" Grid.Row="0" Grid.RowSpan="3" Width="5" Background="DimGray" HorizontalAlignment="Stretch"/>
-
-            <!-- Property Panel -->
-            <TabControl Grid.Column="4" Grid.Row="0" x:Name="RightSideTabs" TabStripPlacement="Bottom">
-                <TabItem Header="Properties">
-                    <StackPanel Margin="4">
-                        <TextBlock Text="Properties" FontWeight="Bold" Margin="0,0,0,4"/>
-                        <TextBlock Text="(Selection info here)"/>
-                    </StackPanel>
-                </TabItem>
-            </TabControl>
-
-            <!-- Horizontal Splitter -->
-            <GridSplitter Grid.Column="2" Grid.Row="1" Height="5" Background="DimGray" VerticalAlignment="Stretch"/>
-
-            <!-- Output Panel -->
-            <Border Grid.Column="2" Grid.Row="2" BorderBrush="Gray" BorderThickness="1">
-                <TextBox Text="Build started...\nAll systems operational."
-                         Margin="2" 
-                         IsReadOnly="True"
-                         AcceptsReturn="True"
-                         VerticalScrollBarVisibility="Auto"/>
-            </Border>
-        </Grid>
-    </DockPanel>
+    </Grid>
 </Window>

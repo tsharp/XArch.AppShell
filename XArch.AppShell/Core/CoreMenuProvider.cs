@@ -21,7 +21,7 @@ namespace XArch.AppShell.Core
                 new MenuEntry() { IsSeparator = true },
                 new MenuEntry("Exit")
                 {
-                    Command = new RelayCommand((e) => System.Windows.Application.Current.Shutdown())
+                    Command = new RelayCommand<object>(_ => System.Windows.Application.Current.Shutdown())
                 }
             });
 

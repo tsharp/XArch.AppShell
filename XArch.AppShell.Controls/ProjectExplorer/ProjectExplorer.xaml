@@ -7,10 +7,37 @@
              mc:Ignorable="d" 
              d:DesignHeight="450" d:DesignWidth="800" 
              Background="Transparent">
-    
-    <DockPanel>
-        <TreeView x:Name="ProjectTree"
-                  SelectedItemChanged="ProjectTree_SelectedItemChanged"
-                  PreviewMouseRightButtonDown="ProjectTree_PreviewMouseRightButtonDown"/>
-    </DockPanel>
+    <UserControl.Resources>
+        <BooleanToVisibilityConverter x:Key="BoolToVisibilityConverter" />
+    </UserControl.Resources>
+
+    <TreeView x:Name="ExplorerTree"
+              ItemsSource="{Binding Root}"
+              SelectedItemChanged="TreeView_OnSelectedItemChanged">
+        <TreeView.ItemContainerStyle>
+            <Style TargetType="TreeViewItem">
+                <Setter Property="IsExpanded" Value="{Binding IsExpanded, Mode=TwoWay}" />
+            </Style>
+        </TreeView.ItemContainerStyle>
+        <TreeView.Resources>
+            <!-- Top-level non-collapsible item -->
+            <HierarchicalDataTemplate DataType="{x:Type local:ProjectExplorerViewModel}"
+                          ItemsSource="{Binding Items}">
+                <StackPanel>
+                    <TextBlock Text="{Binding Name}" FontWeight="Bold" />
+                </StackPanel>
+            </HierarchicalDataTemplate>
+
+            <!-- Folder/File items -->
+            <HierarchicalDataTemplate DataType="{x:Type local:FileSystemItem}"
+                          ItemsSource="{Binding Children}">
+                <StackPanel Orientation="Horizontal">
+                    <TextBlock Text="{Binding IconGlyph}"
+                       FontFamily="Segoe MDL2 Assets"
+                       Margin="0,0,5,0" />
+                    <TextBlock Text="{Binding Name}" />
+                </StackPanel>
+            </HierarchicalDataTemplate>
+        </TreeView.Resources>
+    </TreeView>
 </UserControl>

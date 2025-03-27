@@ -1,10 +1,12 @@
 ﻿using System;
+using System.Collections.Generic;
+using System.Collections.ObjectModel;
+using System.Diagnostics;
 using System.IO;
+using System.Linq;
 using System.Windows;
 using System.Windows.Controls;
-using System.Windows.Input;
-
-using Microsoft.Extensions.DependencyInjection;
+using System.Windows.Controls.Primitives;
 
 using XArch.AppShell.Framework.Events;
 
@@ -15,65 +17,233 @@ namespace XArch.AppShell.Controls.ProjectExplorer
     /// </summary>
     public partial class ProjectExplorer : UserControl
     {
-        private readonly IServiceProvider _services;
+        private readonly IEventManager _eventManager;
+        private readonly Dictionary<string, bool> _expandedPaths = new();
+        private string _rootPath;
+        private FileSystemWatcher? _watcher;
 
-        public ProjectExplorer(IServiceProvider services)
+        public ObservableCollection<ProjectExplorerViewModel> Root { get; set; } = new();
+
+        public ProjectExplorer(IEventManager eventManager)
         {
-            this._services = services;
+            this._eventManager = eventManager;
+            this._rootPath = string.Empty;
             InitializeComponent();
+            DataContext = this;
         }
 
-        public void LoadProject(string projectRoot)
+        private void TreeView_OnSelectedItemChanged(object sender, RoutedPropertyChangedEventArgs<object> e)
         {
-            var rootItem = new TreeViewItem
+            if (e.NewValue is FileSystemItem item && !item.IsDirectory)
             {
-                Header = Path.GetFileName(projectRoot),
-                Tag = projectRoot,
-                IsExpanded = true
+                // Send to view manager (optional)
+                Debug.WriteLine($"Selected file: {item.FullPath}");
+            }
+        }
+
+        internal void LoadProject(string rootPath)
+        {
+            Root.Clear();
+
+            var loader = new FileSystemLoader();
+            var projectItem = loader.LoadTree(rootPath);
+            var rootFolderInfo = new DirectoryInfo(rootPath);
+            this._rootPath = rootPath;
+
+            Root.Add(new ProjectExplorerViewModel
+            {
+                Name = $"Project '{rootFolderInfo.Name}'",
+                FullPath = rootPath,
+                Items = projectItem
+            });
+
+            AttachContextMenus(ExplorerTree.Items, ExplorerTree.ItemContainerGenerator);
+
+            SetupWatcher(rootPath);
+        }
+
+        private void SetupWatcher(string path)
+        {
+            _watcher?.Dispose();
+
+            _watcher = new FileSystemWatcher(path)
+            {
+                IncludeSubdirectories = true,
+                NotifyFilter = NotifyFilters.FileName | NotifyFilters.DirectoryName | NotifyFilters.LastWrite
             };
 
-            LoadDirectoryRecursive(projectRoot, rootItem);
-            ProjectTree.Items.Clear();
-            ProjectTree.Items.Add(rootItem);
+            _watcher.Created += (_, _) => RefreshTree();
+            _watcher.Deleted += (_, _) => RefreshTree();
+            _watcher.Renamed += (_, _) => RefreshTree();
+            _watcher.Changed += (_, _) => RefreshTree();
+
+            _watcher.EnableRaisingEvents = true;
         }
 
-        private void LoadDirectoryRecursive(string path, TreeViewItem parent)
+        private void ApplyExpansionState(FileSystemItem item)
         {
-            foreach (var dir in Directory.GetDirectories(path))
+            if (item.IsDirectory && _expandedPaths.TryGetValue(item.FullPath, out var isExpanded))
             {
-                var dirItem = new TreeViewItem
+                item.IsExpanded = isExpanded;
+            }
+
+            foreach (var child in item.Children)
+            {
+                ApplyExpansionState(child);
+            }
+        }
+
+        private void RefreshTree()
+        {
+            Dispatcher.Invoke(() =>
+            {
+                if (string.IsNullOrWhiteSpace(_rootPath)) return;
+
+                SaveExpandedState(Root.SelectMany(r => r.Items));
+
+                var loader = new FileSystemLoader();
+                var updatedItems = loader.LoadTree(_rootPath);
+
+                Root[0].Items.Clear();
+                foreach (var item in updatedItems)
                 {
-                    Header = Path.GetFileName(dir),
-                    Tag = dir,
-                    IsExpanded = false
-                };
-                LoadDirectoryRecursive(dir, dirItem);
-                parent.Items.Add(dirItem);
-            }
+                    ApplyExpansionState(item);
+                    Root[0].Items.Add(item);
+                }
 
-            foreach (var file in Directory.GetFiles(path))
+                AttachContextMenus(ExplorerTree.Items, ExplorerTree.ItemContainerGenerator);
+            });
+        }
+
+        private void SaveExpandedState(IEnumerable<FileSystemItem> items)
+        {
+            foreach (var item in items)
             {
-                var fileItem = new TreeViewItem
+                if (item.IsDirectory)
                 {
-                    Header = Path.GetFileName(file),
-                    Tag = file
-                };
-                parent.Items.Add(fileItem);
+                    _expandedPaths[item.FullPath] = item.IsExpanded;
+                    SaveExpandedState(item.Children);
+                }
             }
         }
 
-        private void ProjectTree_SelectedItemChanged(object sender, RoutedPropertyChangedEventArgs<object> e)
+        private void AddNewFolder(IFileSystemItem item)
         {
-            if (e.NewValue is TreeViewItem item && File.Exists(item.Tag?.ToString()))
+            Dispatcher.Invoke(() =>
             {
-                string filePath = item.Tag.ToString()!;
-                // TODO: route to open file in editor
+                if (!Directory.Exists(item.FullPath)) return;
+
+                var dialog = new InputDialog("Enter new folder name:");
+                if (dialog.ShowDialog() == true)
+                {
+                    var folderName = dialog.ResponseText;
+                    if (string.IsNullOrWhiteSpace(folderName)) return;
+
+                    var newFolderPath = Path.Combine(item.FullPath, folderName);
+                    Directory.CreateDirectory(newFolderPath);
+
+                    // ✅ Mark this folder path to remain expanded
+                    _expandedPaths[item.FullPath] = true;
+                }
+            });
+        }
+
+        private void AddNewFile(IFileSystemItem item)
+        {
+            Dispatcher.Invoke(() =>
+            {
+                string directoryName = item.IsDirectory ? item.FullPath : Path.GetDirectoryName(item.FullPath);
+                if (!Directory.Exists(directoryName)) return;
+
+                var dialog = new InputDialog("Enter new file name:");
+                if (dialog.ShowDialog() == true)
+                {
+                    var fileName = dialog.ResponseText;
+                    if (string.IsNullOrWhiteSpace(fileName)) return;
+
+                    var newFilePath = Path.Combine(directoryName, fileName);
+                    File.WriteAllText(newFilePath, "");
+
+                    // ✅ Mark the parent directory to stay expanded
+                    _expandedPaths[directoryName] = true;
+                }
+            });
+        }
+
+        private void OpenFileItem(IFileSystemItem item)
+        {
+            Dispatcher.Invoke(() =>
+            {
+                _eventManager.Publish("atlas.file.open", item);
+            });
+        }
+
+        private void AttachContextMenus(ItemCollection items, ItemContainerGenerator generator)
+        {
+            foreach (var obj in items)
+            {
+                if (generator.ContainerFromItem(obj) is not TreeViewItem container)
+                    continue;
+
+                if (obj is IFileSystemItem folderItem && folderItem.IsDirectory)
+                {
+                    var contextMenu = new ContextMenu();
+
+                    var newItem = new MenuItem { Header = "New Item..." };
+                    var newFolder = new MenuItem { Header = "New Folder ..." };
+
+                    newItem.Click += (_, _) => AddNewFile(folderItem);
+                    newFolder.Click += (_, _) => AddNewFolder(folderItem);
+
+                    contextMenu.Items.Add(newItem);
+                    contextMenu.Items.Add(newFolder);
+
+                    if (obj is not ProjectExplorerViewModel)
+                    {
+                        var deleteItem = new MenuItem { Header = "Delete ..." };
+                        deleteItem.Click += (_, _) => DeleteItem(folderItem);
+                        contextMenu.Items.Add(deleteItem);
+                    }
+
+                    container.ContextMenu = contextMenu;
+                }
+                else if (obj is IFileSystemItem fileItem)
+                {
+                    var contextMenu = new ContextMenu();
+                    var deleteItem = new MenuItem { Header = "Delete ..." };
+                    deleteItem.Click += (_, _) => DeleteItem(fileItem);
+                    contextMenu.Items.Add(deleteItem);
+                    container.ContextMenu = contextMenu;
+
+                    container.MouseDoubleClick += (_, _) => OpenFileItem(fileItem);
+                }
+
+                if (container.ItemContainerGenerator.Status == GeneratorStatus.ContainersGenerated)
+                {
+                    AttachContextMenus(container.Items, container.ItemContainerGenerator);
+                }
+                else
+                {
+                    container.ItemContainerGenerator.StatusChanged += (s, e) =>
+                    {
+                        if (container.ItemContainerGenerator.Status == GeneratorStatus.ContainersGenerated)
+                        {
+                            AttachContextMenus(container.Items, container.ItemContainerGenerator);
+                        }
+                    };
+                }
             }
         }
 
-        private void ProjectTree_PreviewMouseRightButtonDown(object sender, MouseButtonEventArgs e)
+        private void DeleteItem(IFileSystemItem item)
         {
-            // Optional: context menu setup here
+            Dispatcher.Invoke(() =>
+            {
+                if (item.IsDirectory)
+                    Directory.Delete(item.FullPath, true);
+                else
+                    File.Delete(item.FullPath);
+            });
         }
     }
 }

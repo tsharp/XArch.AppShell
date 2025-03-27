@@ -21,8 +21,16 @@ namespace XArch.AppShell
             IAtlasStudioPlugin[] plugins = PluginLoader.LoadPlugins(serviceDescriptors);
             ServiceProvider serviceProvider = serviceDescriptors.BuildServiceProvider();
             
-            foreach(IAtlasStudioPlugin plugin in plugins)
+            // Handle the core plugin first
+            plugins.OfType<CorePlugin>().Single().Configure(serviceProvider);
+
+            foreach (IAtlasStudioPlugin plugin in plugins)
             {
+                if (plugin is CorePlugin corePlugin)
+                {
+                    continue;
+                }
+
                 plugin.Configure(serviceProvider);
             }
 
