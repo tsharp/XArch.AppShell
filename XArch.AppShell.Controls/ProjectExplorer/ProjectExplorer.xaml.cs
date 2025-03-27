@@ -144,6 +144,8 @@ namespace XArch.AppShell.Controls.ProjectExplorer
 
                     // ✅ Mark this folder path to remain expanded
                     _expandedPaths[item.FullPath] = true;
+
+                    _eventManager.Publish("project.folder.created", item.FullPath);
                 }
             });
         }
@@ -166,6 +168,9 @@ namespace XArch.AppShell.Controls.ProjectExplorer
 
                     // ✅ Mark the parent directory to stay expanded
                     _expandedPaths[directoryName] = true;
+
+                    _eventManager.Publish("project.file.created", newFilePath);
+                    _eventManager.Publish("project.file.open", newFilePath);
                 }
             });
         }
@@ -174,7 +179,7 @@ namespace XArch.AppShell.Controls.ProjectExplorer
         {
             Dispatcher.Invoke(() =>
             {
-                _eventManager.Publish("atlas.file.open", item);
+                _eventManager.Publish("project.file.open", item.FullPath);
             });
         }
 
@@ -240,9 +245,15 @@ namespace XArch.AppShell.Controls.ProjectExplorer
             Dispatcher.Invoke(() =>
             {
                 if (item.IsDirectory)
+                {
                     Directory.Delete(item.FullPath, true);
+                    _eventManager.Publish("project.folder.deleted", item.FullPath);
+                }
                 else
+                {
                     File.Delete(item.FullPath);
+                    _eventManager.Publish("project.file.deleted", item.FullPath);
+                }
             });
         }
     }

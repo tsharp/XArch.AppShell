@@ -24,6 +24,7 @@ namespace XArch.AppShell.Core
             services.AddInternalSingleton<IMenuManager, MenuManager>();
             services.AddInternalSingleton<IViewManager, DockViewManager>();
             services.AddInternalSingleton<IEventManager, EventManager>();
+            services.AddInternalSingleton<IFileEditorManager, FileEditorManager>();
         }
     }
 }

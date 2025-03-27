@@ -12,11 +12,13 @@ namespace XArch.AppShell.Markdown
     {
         public void Configure(IServiceProvider serviceProvider)
         {
+            IFileEditorManager editorManager = serviceProvider.GetRequiredService<IFileEditorManager>();
+            editorManager.RegisterProvider(serviceProvider.GetRequiredService<MarkdownEditorFactory>());
         }
 
         public void RegisterServices(IServiceCollection services)
         {
-            services.AddSingleton<IEditorFactory, MarkdownEditorFactory>();
+            services.AddSingleton<MarkdownEditorFactory>();
         }
     }
 }

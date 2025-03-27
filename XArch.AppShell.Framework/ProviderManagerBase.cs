@@ -7,5 +7,8 @@ namespace XArch.AppShell.Framework
         protected readonly List<TProvider> _providers = new List<TProvider>();
 
         public void RegisterProvider(TProvider provider) => _providers.Add(provider);
+
+        public void RegisterProvider<TBasicProvider>() where TBasicProvider : TProvider, new()
+            => RegisterProvider(new TBasicProvider());
     }
 }

@@ -3,6 +3,8 @@
 namespace XArch.AppShell.Markdown
 {
     using System;
+    using System.Collections.Generic;
+    using System.Linq;
     using System.Windows;
     using System.Windows.Controls;
 
@@ -10,19 +12,26 @@ namespace XArch.AppShell.Markdown
 
     using Microsoft.Web.WebView2.Core;
 
-    public partial class MarkdownEditorControl : UserControl
-    {
-        private string _filePath;
+    using XArch.AppShell.Framework.Events;
+    using XArch.AppShell.Framework.UI;
 
-        public MarkdownEditorControl(string filePath)
+    public partial class MarkdownEditorControl : EditorControl
+    {
+        protected override void Save()
+        {
+            File.WriteAllText(FilePath, Editor.Text);
+        }
+
+        public MarkdownEditorControl(IEventManager eventManager, string filePath) : base(eventManager, filePath)
         {
             InitializeComponent();
-            _filePath = filePath;
 
             this.Loaded += MarkdownEditorControl_Loaded;
 
-            if (File.Exists(_filePath))
-                Editor.Text = File.ReadAllText(_filePath);
+            if (File.Exists(FilePath))
+            {
+                Editor.Text = File.ReadAllText(FilePath);
+            }
         }
 
         private async void MarkdownEditorControl_Loaded(object sender, RoutedEventArgs e)
@@ -71,14 +80,46 @@ namespace XArch.AppShell.Markdown
 
         private void Editor_TextChanged(object sender, TextChangedEventArgs e)
         {
+            IsDirty = true;
             UpdatePreview(Editor.Text);
         }
+
+        private Dictionary<string, string> ParseFrontMatterMap(string frontMatter)
+        {
+            return frontMatter.Split('\n')
+                .Select(l => l.Split(':', 2))
+                .Where(parts => parts.Length == 2)
+                .ToDictionary(
+                    parts => parts[0].Trim(),
+                    parts => parts[1].Trim());
+        }
+
+        private (string FrontMatter, string MarkdownContent) ParseFrontMatter(string fullText)
+        {
+            var lines = fullText.Split('\n').Select(l => l.TrimEnd('\r')).ToList();
+
+            if (lines.Count >= 3 && lines[0] == "---")
+            {
+                var endIndex = lines.FindIndex(1, l => l == "---");
+                if (endIndex > 0)
+                {
+                    var frontMatterLines = lines.Skip(1).Take(endIndex - 1);
+                    var contentLines = lines.Skip(endIndex + 1);
+                    return (string.Join("\n", frontMatterLines), string.Join("\n", contentLines));
+                }
+            }
+
+            return ("", fullText);
+        }
+
 
         private void UpdatePreview(string markdown)
         {
             if (PreviewBrowser.CoreWebView2 == null) return;
 
-            var html = Markdown.ToHtml(markdown);
+            var (frontMatter, content) = ParseFrontMatter(markdown);
+
+            var html = Markdown.ToHtml(content);
             var styled = $@"
                 <html>
                 <head>

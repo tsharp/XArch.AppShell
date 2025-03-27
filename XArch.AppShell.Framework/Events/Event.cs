@@ -7,7 +7,7 @@ namespace XArch.AppShell.Framework.Events
         public string Name { get; }
         public object? Payload { get; }
 
-        public Event(string name, object? payload = null, bool canCancel = false)
+        public Event(string name, object? payload = null, bool canCancel = true)
         {
             CanCancel = canCancel;
             Name = name;

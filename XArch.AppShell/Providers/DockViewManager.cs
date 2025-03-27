@@ -1,6 +1,8 @@
-﻿using System.Windows;
+﻿using System.Net;
+using System.Windows;
 using System.Windows.Controls;
 
+using XArch.AppShell.Framework.Events;
 using XArch.AppShell.Framework.UI;
 
 using Xceed.Wpf.AvalonDock;
@@ -12,11 +14,12 @@ namespace XArch.AppShell.Providers
     {
         private readonly DockingManager _dockManager;
         private readonly LayoutDocumentPane _documentPane;
-
+        private readonly IEventManager _eventManager;
         private readonly Dictionary<DockSide, LayoutAnchorablePane> _toolPanes = new();
 
-        public DockViewManager()
+        public DockViewManager(IEventManager eventManager)
         {
+            _eventManager = eventManager;
             _dockManager = new DockingManager();
             _documentPane = new LayoutDocumentPane();
 
@@ -72,17 +75,47 @@ namespace XArch.AppShell.Providers
 
         public DockingManager DockingManager => _dockManager;
 
-        public void OpenDocument(string contentId, string title, object content)
+        public void OpenDocument(string contentId, string title, IFileEditorFactory editorFactory)
+        {
+            if (IsDocumentOpen(contentId))
+            {
+                FocusDocument(contentId);
+                return;
+            }
+
+            var editor = editorFactory.Create(contentId);
+
+            OpenDocument(contentId, title, editor);
+        }
+
+        public bool SaveActiveDocument()
+        {
+            if (_dockManager.ActiveContent is EditorControl editor && editor.IsDirty)
+            {
+                editor.SaveFile();                
+                return true;
+            }
+
+            return false;
+        }
+
+        public void OpenDocument(string contentId, string title, EditorControl control)
         {
             if (_documentPane.Children.OfType<LayoutDocument>().Any(d => d.ContentId == contentId))
+            {
+                FocusDocument(contentId);
                 return;
+            }
 
             var doc = new LayoutDocument
             {
                 ContentId = contentId,
                 Title = title,
-                Content = content
+                Content = control,
+                ToolTip = contentId
             };
+
+            control.IsDirtyChanged += (s, e) => doc.Title = $"{title}{(control.IsDirty ? "*" : "")}";
 
             _documentPane.Children.Add(doc);
             _dockManager.ActiveContent = doc.Content;
@@ -127,6 +160,11 @@ namespace XArch.AppShell.Providers
                 _dockManager.ActiveContent = doc.Content;
         }
 
+        public bool IsDocumentOpen(string contentId)
+        {
+            return _documentPane.Children.OfType<LayoutDocument>().Any(d => d.ContentId == contentId);
+        }
+
         public void FocusToolWindow(string contentId)
         {
             foreach (var pane in _toolPanes.Values)
@@ -147,5 +185,19 @@ namespace XArch.AppShell.Providers
             }
         }
 
+        internal void CloseDocument(string contentId, bool forceClose)
+        {
+            var doc = _documentPane.Children
+                .OfType<LayoutDocument>()
+                .FirstOrDefault(d => d.ContentId == contentId);
+
+            if (doc != null)
+            {
+                if (forceClose)
+                {
+                    _documentPane.Children.Remove(doc);
+                }
+            }
+        }
     }
 }

@@ -1,4 +1,5 @@
-﻿<UserControl x:Class="XArch.AppShell.Markdown.MarkdownEditorControl"
+﻿<framework:EditorControl x:Class="XArch.AppShell.Markdown.MarkdownEditorControl"
+             xmlns:framework="clr-namespace:XArch.AppShell.Framework.UI;assembly=XArch.AppShell.Framework"
              xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" 
@@ -35,4 +36,4 @@
                      Grid.Column="2"
                      Margin="0" />
     </Grid>
-</UserControl>
+</framework:EditorControl>
