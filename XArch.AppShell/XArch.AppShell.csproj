@@ -10,13 +10,17 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <PackageReference Include="Extended.Wpf.Toolkit" Version="4.7.25104.5739" />
+    <PackageReference Include="Fluent.Ribbon" Version="11.0.0" />
     <PackageReference Include="Microsoft.Extensions.DependencyInjection" Version="9.0.3" />
   </ItemGroup>
 
   <ItemGroup>
+    <ProjectReference Include="..\XArch.AppShell.Controls\XArch.AppShell.Controls.csproj" />
     <ProjectReference Include="..\XArch.AppShell.Framework\XArch.AppShell.Framework.csproj" />
     <ProjectReference Include="..\XArch.AppShell.Markdown\XArch.AppShell.Markdown.csproj" />
     <ProjectReference Include="..\XArch.AppShell.Sdk\XArch.AppShell.Sdk.csproj" />
+    <ProjectReference Include="..\XArch.AppShell.TileEditor\XArch.AppShell.TileEditor.csproj" />
   </ItemGroup>
 
 </Project>

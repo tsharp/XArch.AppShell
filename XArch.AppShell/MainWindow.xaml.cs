@@ -1,11 +1,11 @@
 ﻿using System.Windows;
-using System.Windows.Controls;
+using System.Windows.Input;
 
 using Microsoft.Extensions.DependencyInjection;
 
-using XArch.AppShell;
-using XArch.AppShell.Framework.UI;
-using XArch.AppShell.Sdk;
+using XArch.AppShell.Framework;
+using XArch.AppShell.Framework.Events;
+using XArch.AppShell.Providers;
 
 namespace XArch.AppShell
 {
@@ -17,66 +17,23 @@ namespace XArch.AppShell
         public MainWindow()
         {
             InitializeComponent();
-            AtlasStudioContext.Current.Initialize();
+            Startup();
+            PreviewKeyDown += OnPreviewKeyDown;
         }
 
-        private void NewProject_Click(object sender, RoutedEventArgs e)
+        private void Startup()
         {
-            // Set default directory to user's Documents folder
-            var dlg = new Microsoft.Win32.OpenFolderDialog()
-            {
-                InitialDirectory = "C:\\workspace_dnd", // Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments),
-                Multiselect = false,
-            };
+            MenuManager menuManager = App.Services.GetRequiredService<MenuManager>();
+            menuManager.Build(AppMenu);
+        }
 
-            if (dlg.ShowDialog() == true)
+        private void OnPreviewKeyDown(object sender, KeyEventArgs e)
+        {
+            if (e.Key == Key.S && Keyboard.Modifiers.HasFlag(ModifierKeys.Control))
             {
-                // var project = new AtlasProject();
-                // AtlasProjectService.Save(project, dlg.FileName);
-                AtlasProjectService.Save(new AtlasProject()
-                {
-                    FilePath = $"{dlg.FolderName}\\project.atlasproj",
-                    Name = "New Project",
-                    Author = "Unknown",
-                    Created = DateTime.UtcNow
-                });
-
-                AtlasStudioContext.Current.OpenProject(dlg.FolderName);
+                IEventManager eventManager = App.Services.GetRequiredService<IEventManager>();
+                eventManager.Publish("project.file.save_active");
             }
-        }
-
-        private void OpenProject_Click(object sender, RoutedEventArgs e)
-        {
-            // Set default directory to user's Documents folder
-            var dlg = new Microsoft.Win32.OpenFolderDialog()
-            {
-                InitialDirectory = "C:\\workspace_dnd", // Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments),
-                Multiselect = false,
-            };
-
-            if (dlg.ShowDialog() == true)
-            {
-                AtlasStudioContext.Current.OpenProject(dlg.FolderName);
-            }
-
-            var factory = AtlasStudioContext.Current.Services.GetRequiredService<IEditorFactory>();
-            var view = factory.Create("test.md");
-            var control = view.GetControl();
-
-            AddEditorTab("test.md", control);
-
-        }
-
-        private void AddEditorTab(string title, UIElement control)
-        {
-            var tab = new TabItem
-            {
-                Header = title,
-                Content = control
-            };
-
-            MainTabControl.Items.Add(tab);
-            MainTabControl.SelectedItem = tab;
         }
     }
 }
