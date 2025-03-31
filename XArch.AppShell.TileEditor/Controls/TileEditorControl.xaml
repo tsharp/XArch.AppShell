@@ -1,5 +1,5 @@
 ﻿<framework:EditorControl xmlns:framework="clr-namespace:XArch.AppShell.Framework.UI;assembly=XArch.AppShell.Framework"
-             x:Class="XArch.AppShell.TileEditor.Controls.MapEditorControl"
+             x:Class="XArch.AppShell.TileEditor.Controls.TileEditorControl"
              xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
@@ -29,6 +29,7 @@
                     MouseDown="TileCanvas_MouseDown"
                     MouseMove="TileCanvas_MouseMove"
                     MouseUp="TileCanvas_MouseUp"
+                    IsHitTestVisible="True"
                     Background="Transparent">
                     <Canvas.RenderTransform>
                         <TransformGroup>

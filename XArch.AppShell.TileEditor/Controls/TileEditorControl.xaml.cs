@@ -18,7 +18,7 @@ namespace XArch.AppShell.TileEditor.Controls
     /// <summary>
     /// Tile editor control with zoom, pan, tile placement and hover highlight.
     /// </summary>
-    public partial class MapEditorControl : EditorControl
+    public partial class TileEditorControl : EditorControl
     {
         private readonly TileBrushTool _tileBrushTool;
         private TileLayer? _activeLayer;
@@ -34,7 +34,7 @@ namespace XArch.AppShell.TileEditor.Controls
 
         public int TileSize { get; set; } = 32;
 
-        public MapEditorControl(TileBrushTool tileBrushTool, IEventManager eventManager, string filePath) : base(eventManager, filePath)
+        public TileEditorControl(TileBrushTool tileBrushTool, IEventManager eventManager, string filePath) : base(eventManager, filePath)
         {
             InitializeComponent();
             _tileBrushTool = tileBrushTool;

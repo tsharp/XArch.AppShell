@@ -12,9 +12,9 @@ namespace XArch.AppShell.Core
     [AtlasStudioPlugin("Core", "Core System Plugin")]
     internal class CorePlugin : IAtlasStudioPlugin
     {
-        public void Configure(IServiceProvider serviceProvider)
+        public void Configure(IAppContext appContext)
         {
-            MenuManager menuManager = serviceProvider.GetRequiredService<MenuManager>();
+            MenuManager menuManager = appContext.Services.GetRequiredService<MenuManager>();
             menuManager.RegisterProvider(new CoreMainMenuProvider());
         }
 

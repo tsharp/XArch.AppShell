@@ -9,11 +9,11 @@ using XArch.AppShell.TileEditor.Controls;
 
 namespace XArch.AppShell.Controls.ProjectExplorer
 {
-    internal class MapEditorRibbonMenuProvider : IMenuProvider
+    internal class TileEditorRibbonMenuProvider : IMenuProvider
     {
         private readonly IEventManager eventManager;
 
-        public MapEditorRibbonMenuProvider(IEventManager eventManager)
+        public TileEditorRibbonMenuProvider(IEventManager eventManager)
         {
             this.eventManager = eventManager;
         }

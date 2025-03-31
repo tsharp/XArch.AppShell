@@ -13,7 +13,11 @@ namespace XArch.AppShell.Core
         {
             List<IAtlasStudioPlugin> plugins = new List<IAtlasStudioPlugin>();
 
-            var assemblies = GetAssembliesToScan();
+            // TODO: Allow plugins to be loaded from other sources (e.g. NuGet packages)
+            // TODO: Allow plugin prefixes to be configured (e.g. Kuiper.*)
+            var assemblies = GetAssembliesToScan("XArch.AppShell").ToList();
+            assemblies.AddRange(GetAssembliesToScan("Kuiper.AtlasStudio"));
+
             IList<Type> activatedPlugins = new List<Type>();
 
             plugins.AddRange(LoadPlugins(Assembly.GetExecutingAssembly(), services));
@@ -52,7 +56,7 @@ namespace XArch.AppShell.Core
             return plugins.ToArray();
         }
 
-        private static IEnumerable<Assembly> GetAssembliesToScan()
+        private static IEnumerable<Assembly> GetAssembliesToScan(string namePrefix)
         {
             // Load all referenced assemblies of the entry assembly (ensures they're in AppDomain)
             var entryAssembly = Assembly.GetEntryAssembly();
@@ -73,7 +77,7 @@ namespace XArch.AppShell.Core
 
             // Load all assemblies in the current assembly folder that match the Kuiper.* pattern
             var path = Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location);
-            var files = Directory.GetFiles(path, "XArch.AppShell.*.dll", SearchOption.AllDirectories);
+            var files = Directory.GetFiles(path, $"{namePrefix}.*.dll", SearchOption.AllDirectories);
 
             foreach (var file in files)
             {
@@ -89,7 +93,7 @@ namespace XArch.AppShell.Core
 
             // Now return all non-dynamic, resolvable assemblies currently loaded
             var loaded = AppDomain.CurrentDomain.GetAssemblies()
-                .Where(a => !a.IsDynamic && !string.IsNullOrEmpty(a.Location) && a.GetName().Name.StartsWith("XArch.AppShell."))
+                .Where(a => !a.IsDynamic && !string.IsNullOrEmpty(a.Location) && a.GetName().Name.StartsWith($"{namePrefix}."))
                 .ToList();
 
             return loaded.Distinct();

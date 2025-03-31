@@ -1,19 +1,20 @@
 ﻿using System;
 
+using XArch.AppShell.Framework;
 using XArch.AppShell.Framework.Events;
 using XArch.AppShell.Framework.UI;
 using XArch.AppShell.TileEditor.Controls;
 
 namespace XArch.AppShell.TileEditor
 {
-    internal class MapEditorFactory : IFileEditorFactory
+    internal class TileEditorFactory : IFileEditorFactory
     {
-        private readonly IEventManager _eventManager;
+        private readonly IAppContext _appContext;
         private readonly TileBrushTool _tileBrushTool;
 
-        public MapEditorFactory(TileBrushTool tileBrushTool, IEventManager eventManager)
+        public TileEditorFactory(IAppContext appContext, TileBrushTool tileBrushTool)
         {
-            _eventManager = eventManager;
+            _appContext = appContext;
             _tileBrushTool = tileBrushTool;
         }
 
@@ -25,12 +26,12 @@ namespace XArch.AppShell.TileEditor
         /// <returns></returns>
         public bool CanOpen(string fileExtension)
         {
-            return fileExtension.Equals(".kmap_old", StringComparison.OrdinalIgnoreCase);
+            return fileExtension.Equals(".kmap", StringComparison.OrdinalIgnoreCase);
         }
 
         public EditorControl Create(string filePath)
         {
-            return new MapEditorControl(_tileBrushTool, _eventManager, filePath);
+            return new TileEditorControl(_tileBrushTool, _appContext.EventManager, filePath);
         }
     }
 

@@ -10,11 +10,10 @@ namespace XArch.AppShell.Controls.Console
     [AtlasStudioPlugin(nameof(ConsoleControl))]
     public class ConsolePlugin : IAtlasStudioPlugin
     {
-        public void Configure(IServiceProvider serviceProvider)
+        public void Configure(IAppContext appContext)
         {
-            IViewManager viewManager = serviceProvider.GetRequiredService<IViewManager>();
-            var consoleControl = serviceProvider.GetRequiredService<ConsoleControl>();
-            viewManager.RegisterTool(DockLocation.Bottom, "tool.console", "Console", consoleControl, canHide: true, hiddenByDefault: false);
+            var consoleControl = appContext.Services.GetRequiredService<ConsoleControl>();
+            appContext.ViewManager.RegisterTool(DockLocation.Bottom, "tool.console", "Console", consoleControl, canHide: true, hiddenByDefault: false);
         }
 
         public void RegisterServices(IServiceCollection services)

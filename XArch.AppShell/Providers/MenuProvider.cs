@@ -6,8 +6,6 @@ using Microsoft.Extensions.DependencyInjection;
 using XArch.AppShell.Framework;
 using XArch.AppShell.Framework.Menu;
 
-using Xceed.Wpf.AvalonDock.Controls;
-
 namespace XArch.AppShell.Providers
 {
     internal class MenuManager : ProviderManagerBase<IMenuProvider>, IMenuManager
@@ -69,7 +67,7 @@ namespace XArch.AppShell.Providers
             // This is intended to be a special control
             if (entry.ControlType != null && (entry.Children == null || entry.Children.Count == 0))
             {
-                return App.Services.GetRequiredService(entry.ControlType);
+                return App.Context.Services.GetRequiredService(entry.ControlType);
             }
             else if (entry.ControlType != null)
             {

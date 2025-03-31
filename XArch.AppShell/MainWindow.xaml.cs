@@ -24,12 +24,12 @@ namespace XArch.AppShell
         private void Startup()
         {
             // Build the menu.
-            MenuManager menuManager = App.Services.GetRequiredService<MenuManager>();
+            MenuManager menuManager = App.Context.Services.GetRequiredService<MenuManager>();
             menuManager.BuildMainMenu(AppMenu);
             menuManager.BuildToolbarMenu(AppToolbar);
 
             // Build and set the dock view manager.
-            DockViewManager viewManager = App.Services.GetRequiredService<DockViewManager>();
+            DockViewManager viewManager = App.Context.Services.GetRequiredService<DockViewManager>();
             AppDock.Content = viewManager.DockingManager;
         }
 
@@ -37,7 +37,7 @@ namespace XArch.AppShell
         {
             if (e.Key == Key.S && Keyboard.Modifiers.HasFlag(ModifierKeys.Control))
             {
-                IEventManager eventManager = App.Services.GetRequiredService<IEventManager>();
+                IEventManager eventManager = App.Context.Services.GetRequiredService<IEventManager>();
                 eventManager.Publish("project.file.save_active");
             }
         }

@@ -1,10 +1,6 @@
-﻿using System;
-
-using Microsoft.Extensions.DependencyInjection;
+﻿using Microsoft.Extensions.DependencyInjection;
 
 using XArch.AppShell.Framework;
-using XArch.AppShell.Framework.Events;
-using XArch.AppShell.Framework.Menu;
 using XArch.AppShell.Framework.UI;
 
 namespace XArch.AppShell.Controls.ProjectExplorer
@@ -12,29 +8,25 @@ namespace XArch.AppShell.Controls.ProjectExplorer
     [AtlasStudioPlugin(nameof(ProjectExplorer), "Provides a control for basic project management functionality.")]
     public class ProjectExplorerPlugin : IAtlasStudioPlugin
     {
-        private IServiceProvider? serviceProvider;
+        private IAppContext _appContext;
         private ProjectExplorer? projectExplorer;
 
-        public void Configure(IServiceProvider serviceProvider)
+        public void Configure(IAppContext appContext)
         {
-            this.serviceProvider = serviceProvider;
-            this.projectExplorer = serviceProvider.GetRequiredService<ProjectExplorer>();
+            this._appContext = appContext;
+            this.projectExplorer = appContext.Services.GetRequiredService<ProjectExplorer>();
 
-            IMenuManager menuManager = serviceProvider.GetRequiredService<IMenuManager>();
-            IViewManager viewManager = serviceProvider.GetRequiredService<IViewManager>();
-            IEventManager eventManager = serviceProvider.GetRequiredService<IEventManager>();
+            appContext.ViewManager.RegisterTool(DockLocation.Left, "atlas.project.explorer", "Project Explorer", projectExplorer, canHide: false);
+            appContext.MenuManager.RegisterProvider(new ProjectExplorerMenuProvider(appContext.EventManager));
 
-            viewManager.RegisterTool(DockLocation.Left, "atlas.project.explorer", "Project Explorer", projectExplorer, canHide: false);
-            menuManager.RegisterProvider(new ProjectExplorerMenuProvider(eventManager));
-
-            eventManager.Subscribe("atlas.project.explorer.toggle", _ =>
+            appContext.EventManager.Subscribe("atlas.project.explorer.toggle", _ =>
             {
-                viewManager.FocusToolWindow("atlas.project.explorer");
+                appContext.ViewManager.FocusToolWindow("atlas.project.explorer");
             });
 
-            eventManager.Subscribe("atlas.project.open", @event =>
+            appContext.EventManager.Subscribe("atlas.project.open", @event =>
             {
-                viewManager.FocusToolWindow("atlas.project.explorer");
+                appContext.ViewManager.FocusToolWindow("atlas.project.explorer");
                 projectExplorer.LoadProject(@event.Payload?.ToString()!);
             });
         }
