@@ -24,7 +24,7 @@ namespace XArch.AppShell.Controls.ProjectExplorer
             IViewManager viewManager = serviceProvider.GetRequiredService<IViewManager>();
             IEventManager eventManager = serviceProvider.GetRequiredService<IEventManager>();
 
-            viewManager.RegisterTool(DockSide.Left, "atlas.project.explorer", "Project Explorer", projectExplorer, canHide: false);
+            viewManager.RegisterTool(DockLocation.Left, "atlas.project.explorer", "Project Explorer", projectExplorer, canHide: false);
             menuManager.RegisterProvider(new ProjectExplorerMenuProvider(eventManager));
 
             eventManager.Subscribe("atlas.project.explorer.toggle", _ =>

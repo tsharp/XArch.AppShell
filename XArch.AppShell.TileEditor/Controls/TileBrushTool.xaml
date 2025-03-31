@@ -1,0 +1,27 @@
+﻿<UserControl x:Class="XArch.AppShell.TileEditor.Controls.TileBrushTool"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" 
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008" 
+             xmlns:local="clr-namespace:XArch.AppShell.TileEditor.Controls"
+             mc:Ignorable="d" 
+             d:DesignHeight="450" d:DesignWidth="800">
+    <ScrollViewer VerticalScrollBarVisibility="Auto">
+        <UniformGrid Columns="4" Margin="4" IsItemsHost="False">
+            <ItemsControl x:Name="BrushList" ItemsSource="{Binding TileBrushes}">
+                <ItemsControl.ItemTemplate>
+                    <DataTemplate>
+                        <Border Margin="4"
+                                Padding="4"
+                                Background="{Binding Fill}"
+                                BorderBrush="Black"
+                                BorderThickness="1"
+                                MouseDown="Brush_Click">
+                            <TextBlock Text="{Binding Name}" FontWeight="Bold" Foreground="White" />
+                        </Border>
+                    </DataTemplate>
+                </ItemsControl.ItemTemplate>
+            </ItemsControl>
+        </UniformGrid>
+    </ScrollViewer>
+</UserControl>

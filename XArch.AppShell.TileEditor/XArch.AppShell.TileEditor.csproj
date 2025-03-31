@@ -12,6 +12,7 @@
   </ItemGroup>
 
   <ItemGroup>
+    <ProjectReference Include="..\XArch.AppShell.Framework\XArch.AppShell.Framework.csproj" />
     <ProjectReference Include="..\XArch.AppShell.Sdk\XArch.AppShell.Sdk.csproj" />
   </ItemGroup>
 

@@ -1,5 +1,4 @@
-﻿using System.Net;
-using System.Windows;
+﻿using System.Windows;
 using System.Windows.Controls;
 
 using XArch.AppShell.Framework.Events;
@@ -15,18 +14,20 @@ namespace XArch.AppShell.Providers
         private readonly DockingManager _dockManager;
         private readonly LayoutDocumentPane _documentPane;
         private readonly IEventManager _eventManager;
-        private readonly Dictionary<DockSide, LayoutAnchorablePane> _toolPanes = new();
+        private readonly Dictionary<DockLocation, LayoutAnchorablePane> _toolPanes = new();
+        public event EventHandler<EditorControl?>? OnActiveEditorChanged;
 
         public DockViewManager(IEventManager eventManager)
         {
             _eventManager = eventManager;
             _dockManager = new DockingManager();
             _documentPane = new LayoutDocumentPane();
+            _dockManager.ActiveContentChanged += (s, e) => NotifyActiveDocumentChanged();
 
             // Create dockable side panes with default sizes
-            var leftToolPane = CreateToolPane(DockSide.Left, new GridLength(250));
-            var rightToolPane = CreateToolPane(DockSide.Right, new GridLength(300));
-            var bottomToolPane = CreateToolPane(DockSide.Bottom, new GridLength(180));
+            var leftToolPane = CreateToolPane(DockLocation.Left, new GridLength(250));
+            var rightToolPane = CreateToolPane(DockLocation.Right, new GridLength(300));
+            var bottomToolPane = CreateToolPane(DockLocation.Bottom, new GridLength(180));
 
             _dockManager.Layout = new LayoutRoot
             {
@@ -54,17 +55,31 @@ namespace XArch.AppShell.Providers
             };
         }
 
-        private LayoutAnchorablePaneGroup CreateToolPane(DockSide side, GridLength size)
+        private void NotifyActiveDocumentChanged()
+        {
+            LayoutDocument document = _dockManager.ActiveContent as LayoutDocument;
+
+            // If the active document content is an editor control - notify the active editor changed
+            if (document != null  && document.Content is EditorControl editorControl)
+            {
+                OnActiveEditorChanged?.Invoke(this, editorControl);
+            }
+
+            OnActiveEditorChanged?.Invoke(this, null);
+
+        }
+
+        private LayoutAnchorablePaneGroup CreateToolPane(DockLocation side, GridLength size)
         {
             var pane = new LayoutAnchorablePane();
             _toolPanes[side] = pane;
 
             var group = new LayoutAnchorablePaneGroup
             {
-                Orientation = (side == DockSide.Bottom) ? Orientation.Horizontal : Orientation.Vertical
+                Orientation = (side == DockLocation.Bottom) ? Orientation.Horizontal : Orientation.Vertical
             };
 
-            if (side == DockSide.Bottom)
+            if (side == DockLocation.Bottom)
                 group.DockHeight = size;
             else
                 group.DockWidth = size;
@@ -90,10 +105,21 @@ namespace XArch.AppShell.Providers
 
         public bool SaveActiveDocument()
         {
+            // If the active content is an editor and it's dirty, save it
             if (_dockManager.ActiveContent is EditorControl editor && editor.IsDirty)
             {
-                editor.SaveFile();                
+                editor.SaveFile();
                 return true;
+            }
+
+            // If the active content is a document and it's dirty, save it
+            if (_dockManager.ActiveContent is LayoutDocument doc)
+            {
+                if (doc.Content is EditorControl editorControl && editorControl.IsDirty)
+                {
+                    editorControl.SaveFile();
+                    return true;
+                }
             }
 
             return false;
@@ -121,7 +147,7 @@ namespace XArch.AppShell.Providers
             _dockManager.ActiveContent = doc.Content;
         }
 
-        public void RegisterTool(DockSide side, string contentId, string title, object content, bool canHide = true, bool hiddenByDefault = true)
+        public void RegisterTool(DockLocation side, string contentId, string title, object content, bool canHide = true, bool hiddenByDefault = true)
         {
             var anchorable = new LayoutAnchorable
             {
@@ -157,7 +183,9 @@ namespace XArch.AppShell.Providers
                 .FirstOrDefault(d => d.ContentId == contentId);
 
             if (doc != null)
+            {
                 _dockManager.ActiveContent = doc.Content;
+            }
         }
 
         public bool IsDocumentOpen(string contentId)

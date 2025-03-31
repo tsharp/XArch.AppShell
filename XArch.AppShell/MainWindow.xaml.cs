@@ -23,8 +23,14 @@ namespace XArch.AppShell
 
         private void Startup()
         {
+            // Build the menu.
             MenuManager menuManager = App.Services.GetRequiredService<MenuManager>();
-            menuManager.Build(AppMenu);
+            menuManager.BuildMainMenu(AppMenu);
+            menuManager.BuildToolbarMenu(AppToolbar);
+
+            // Build and set the dock view manager.
+            DockViewManager viewManager = App.Services.GetRequiredService<DockViewManager>();
+            AppDock.Content = viewManager.DockingManager;
         }
 
         private void OnPreviewKeyDown(object sender, KeyEventArgs e)

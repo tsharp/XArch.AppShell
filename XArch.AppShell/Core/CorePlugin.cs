@@ -15,7 +15,7 @@ namespace XArch.AppShell.Core
         public void Configure(IServiceProvider serviceProvider)
         {
             MenuManager menuManager = serviceProvider.GetRequiredService<MenuManager>();
-            menuManager.RegisterProvider(new CoreMenuProvider());
+            menuManager.RegisterProvider(new CoreMainMenuProvider());
         }
 
         public void RegisterServices(IServiceCollection services)

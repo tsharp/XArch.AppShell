@@ -1,24 +1,28 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Diagnostics;
+using System.IO;
 using System.Linq;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
 using System.Windows.Media;
+using System.Windows.Media.Imaging;
 using System.Windows.Shapes;
 
-using static System.Formats.Asn1.AsnWriter;
+using XArch.AppShell.Framework.Events;
+using XArch.AppShell.Framework.UI;
+using XArch.AppShell.TileEditor.Models;
 
-namespace XArch.AppShell.TileEditor
+namespace XArch.AppShell.TileEditor.Controls
 {
     /// <summary>
     /// Tile editor control with zoom, pan, tile placement and hover highlight.
     /// </summary>
-    public partial class TileEditorControl : UserControl
+    public partial class MapEditorControl : EditorControl
     {
-        private readonly List<TileLayer> _layers = new();
+        private readonly TileBrushTool _tileBrushTool;
         private TileLayer? _activeLayer;
+        private TileMap? _map;
 
         private readonly Rectangle _hoverHighlight;
         private Point? _panStart;
@@ -26,13 +30,14 @@ namespace XArch.AppShell.TileEditor
         private bool _isPainting = false;
         private MouseButton _paintButton;
         private HashSet<Point> _alreadyPainted = new(); // Prevent duplicates during drag
+        private readonly Dictionary<int, Rectangle> _tileVisuals = new();
 
         public int TileSize { get; set; } = 32;
 
-        public TileEditorControl()
+        public MapEditorControl(TileBrushTool tileBrushTool, IEventManager eventManager, string filePath) : base(eventManager, filePath)
         {
             InitializeComponent();
-
+            _tileBrushTool = tileBrushTool;
             _hoverHighlight = new Rectangle
             {
                 Width = TileSize,
@@ -50,123 +55,139 @@ namespace XArch.AppShell.TileEditor
             TileCanvas.MouseDown += TileCanvas_MouseDown;
             TileCanvas.MouseUp += TileCanvas_MouseUp;
             TileCanvas.MouseLeave += (_, __) => _hoverHighlight.Visibility = Visibility.Hidden;
-            TileCanvas.MouseLeftButtonDown += TileCanvas_MouseButtonDown;
-            TileCanvas.MouseRightButtonDown += TileCanvas_MouseButtonDown;
+            // TileCanvas.MouseLeftButtonDown += TileCanvas_MouseButtonDown;
+            // TileCanvas.MouseRightButtonDown += TileCanvas_MouseButtonDown;
             TileScrollViewer.PreviewMouseWheel += TileScrollViewer_MouseWheel;
-            TileScrollViewer.ScrollChanged += ScrollViewer_ScrollChanged;
 
             TileCanvas.Cursor = Cursors.Cross;
         }
 
+        protected override void Save()
+        {
+            TileMapLoader.Save(_map, FilePath);
+
+            string pngName = $"{System.IO.Path.GetFileNameWithoutExtension(FilePath)}.png";
+            string directory = System.IO.Path.GetDirectoryName(FilePath);
+            string pngFullPath = System.IO.Path.Combine(directory, pngName);
+
+            ExportCanvasToPng(TileCanvas, pngFullPath);
+        }
+
+        public void ExportCanvasToPng(Canvas canvas, string outputPath, double dpi = 96)
+        {
+            // Ensure layout is fully measured and arranged
+            canvas.Measure(new Size(double.PositiveInfinity, double.PositiveInfinity));
+            canvas.Arrange(new Rect(canvas.DesiredSize));
+
+            var width = _map.Width * TileSize; // (int)canvas.ActualWidth;
+            var height = _map.Width * TileSize; // (int)canvas.ActualHeight;
+
+            if (width == 0 || height == 0)
+                return;
+
+            var rtb = new RenderTargetBitmap(width, height, dpi, dpi, PixelFormats.Pbgra32);
+            rtb.Render(canvas);
+
+            var pngEncoder = new PngBitmapEncoder();
+            pngEncoder.Frames.Add(BitmapFrame.Create(rtb));
+
+            using var fs = new FileStream(outputPath, FileMode.Create, FileAccess.Write);
+            pngEncoder.Save(fs);
+        }
+
         private void OnLoaded(object sender, RoutedEventArgs e)
         {
-            GenerateTestGrid(20, 20);
-            RenderTiles();
+            _map = TileMapLoader.Load(FilePath);
+            SetActiveLayer("Terrain");
+            RenderAllTiles();
+
+            // Keep hover highlight on top
+            GridOverlayCanvas.Children.Remove(_hoverHighlight);
+            GridOverlayCanvas.Children.Add(_hoverHighlight);
         }
 
-        public void SetTile(int x, int y, Tile tile)
+        public void SetTile(int x, int y, int typeId)
         {
-            _activeLayer.Tiles[new Point(x, y)] = tile;
-        }
-
-        public void AddLayer(string name, int zIndex)
-        {
-            var layer = new TileLayer { Name = name, ZIndex = zIndex };
-            _layers.Add(layer);
-            _layers.Sort((a, b) => a.ZIndex.CompareTo(b.ZIndex));
-
             if (_activeLayer == null)
-                _activeLayer = layer;
+                return;
+
+            _map.SetTile(_activeLayer, x, y, typeId);
         }
+
+        //public void AddLayer(string name, int zIndex)
+        //{
+        //    var layer = new TileLayer { Name = name, ZIndex = zIndex };
+        //    _layers.Add(layer);
+        //    _layers.Sort((a, b) => a.ZIndex.CompareTo(b.ZIndex));
+
+        //    if (_activeLayer == null)
+        //        _activeLayer = layer;
+        //}
 
         public void SetActiveLayer(string name)
         {
-            _activeLayer = _layers.FirstOrDefault(l => l.Name == name);
+            _activeLayer = _map.Layers.SingleOrDefault(l => l.Name == name);
         }
 
-        private void GenerateTestGrid(int width, int height)
+        private Rectangle CreateTileRect(int x, int y, int typeId)
         {
-            _layers.Clear();
-            _activeLayer = null;
-
-            var layer = new TileLayer
+            var fill = Models.TileBrush.GetBrush(typeId).Fill;
+            var rect = new Rectangle
             {
-                Name = "Base Layer",
-                ZIndex = 0
+                Width = TileSize,
+                Height = TileSize,
+                Fill = fill,
+                Stroke = Brushes.DarkGray,
+                StrokeThickness = 0.35,
+                Tag = null
             };
 
-            for (int y = 0; y < height; y++)
+            Canvas.SetLeft(rect, x * TileSize);
+            Canvas.SetTop(rect, y * TileSize);
+
+            return rect;
+        }
+
+        private void UpdateTileVisual(int key, int x, int y, int typeId)
+        {
+            if (_tileVisuals.TryGetValue(key, out var rect))
             {
-                for (int x = 0; x < width; x++)
-                {
-                    layer.Tiles[new Point(x, y)] = new Tile
-                    {
-                        X = x,
-                        Y = y,
-                        Type = "Grass",
-                        Fill = (x + y) % 2 == 0 ? Brushes.DarkOliveGreen : Brushes.OliveDrab
-                    };
-                }
+                var fill = Models.TileBrush.GetBrush(typeId).Fill;
+                rect.Fill = fill;
+            }
+            else
+            {
+                rect = CreateTileRect(x, y, typeId);
+                _tileVisuals[key] = rect;
+                TileCanvas.Children.Add(rect);
             }
 
-            _layers.Add(layer);
-            _activeLayer = _layers.First();
+            // Ensure canvas redraws
+            TileCanvas.InvalidateVisual();
         }
 
-        private void RenderTiles()
+        private void RenderAllTiles()
         {
-            var viewport = new Rect(
-                TileScrollViewer.HorizontalOffset,
-                TileScrollViewer.VerticalOffset,
-                TileScrollViewer.ViewportWidth,
-                TileScrollViewer.ViewportHeight);
+            if (_map == null) return;
 
-            RenderTiles(viewport);
-        }
-
-        private void RenderTiles(Rect viewport)
-        {
             TileCanvas.Children.Clear();
+            _tileVisuals.Clear();
 
-            var scale = TileCanvasScale.ScaleX;
-            var offsetX = TileCanvasOffset.X;
-            var offsetY = TileCanvasOffset.Y;
-
-            int startX = (int)Math.Floor((viewport.X - offsetX) / (TileSize * scale));
-            int endX = (int)Math.Ceiling((viewport.X + viewport.Width - offsetX) / (TileSize * scale));
-            int startY = (int)Math.Floor((viewport.Y - offsetY) / (TileSize * scale));
-            int endY = (int)Math.Ceiling((viewport.Y + viewport.Height - offsetY) / (TileSize * scale));
-
-            foreach (var layer in _layers.OrderBy(l => l.ZIndex))
+            foreach (var layer in _map.Layers.OrderBy(l => l.ZIndex))
             {
                 if (!layer.IsVisible) continue;
 
                 foreach (var kvp in layer.Tiles)
                 {
-                    var tile = kvp.Value;
-                    var rect = new Rectangle
-                    {
-                        Width = TileSize,
-                        Height = TileSize,
-                        Fill = tile.Fill,
-                        Stroke = Brushes.Gray,
-                        StrokeThickness = 0.5,
-                        Tag = tile
-                    };
+                    var key = kvp.Key;
+                    var typeId = kvp.Value;
+                    var (x, y) = _map.GetCoord(key);
 
-                    Canvas.SetLeft(rect, tile.X * TileSize);
-                    Canvas.SetTop(rect, tile.Y * TileSize);
+                    var rect = CreateTileRect(x, y, typeId);
+                    _tileVisuals[key] = rect;
                     TileCanvas.Children.Add(rect);
                 }
             }
-
-            TileCanvas.Children.Add(_hoverHighlight);
-        }
-
-        private void ScrollViewer_ScrollChanged(object sender, ScrollChangedEventArgs e)
-        {
-            var viewport = new Rect(e.HorizontalOffset, e.VerticalOffset, e.ViewportWidth, e.ViewportHeight);
-            RenderTiles(viewport);
         }
 
         private Point GetWorldTileCoord(MouseEventArgs e)
@@ -194,16 +215,11 @@ namespace XArch.AppShell.TileEditor
                 var current = e.GetPosition(TileScrollViewer);
                 var delta = current - _panStart.Value;
 
-                //TileCanvasOffset.X += delta.X;
-                //TileCanvasOffset.Y += delta.Y;
-
                 // Clamp
                 TileCanvasOffset.X = Math.Min(TileCanvasOffset.X + delta.X, 0);
                 TileCanvasOffset.Y = Math.Min(TileCanvasOffset.Y + delta.Y, 0);
 
-
                 _panStart = current;
-                RenderTiles();
                 return;
             }
 
@@ -211,9 +227,6 @@ namespace XArch.AppShell.TileEditor
             Canvas.SetLeft(_hoverHighlight, tileCoord.X * TileSize);
             Canvas.SetTop(_hoverHighlight, tileCoord.Y * TileSize);
             _hoverHighlight.Visibility = Visibility.Visible;
-
-            var pos = e.GetPosition(TileCanvas);
-            Debug.WriteLine($"Tile Coord: {tileCoord.X}, {tileCoord.Y}, @ canvas (Offset: {TileCanvasOffset.X}, {TileCanvasOffset.Y}) (Pos: {pos.X},{pos.Y})");
         }
 
         private void TileCanvas_MouseDown(object sender, MouseButtonEventArgs e)
@@ -236,34 +249,35 @@ namespace XArch.AppShell.TileEditor
         private void ApplyPaintAt(MouseEventArgs e)
         {
             var tileCoord = GetWorldTileCoord(e);
-            var key = new Point(tileCoord.X, tileCoord.Y);
+            var tileKey = _map.GetKey((int)tileCoord.X, (int)tileCoord.Y);
 
-            if (_alreadyPainted.Contains(key))
+            _eventManager.Publish("tileEditor.coordinate", $"{tileCoord.X},{tileCoord.Y}");
+
+            // Out of bounds check (inclusive lower, exclusive upper)
+            if (tileCoord.X < 0 || tileCoord.Y < 0 || tileCoord.X >= _map.Width || tileCoord.Y >= _map.Height)
                 return;
 
-            _alreadyPainted.Add(key);
+            if (_alreadyPainted.Contains(tileCoord))
+                return;
+
+            _alreadyPainted.Add(tileCoord);
+
+            if (_activeLayer == null)
+                return;
 
             if (_paintButton == MouseButton.Left)
             {
-                if (_activeLayer != null && !_activeLayer.Tiles.ContainsKey(key))
-                {
-                    _activeLayer.Tiles[key] = new Tile
-                    {
-                        X = (int)tileCoord.X,
-                        Y = (int)tileCoord.Y,
-                        Type = "Placed",
-                        Fill = Brushes.SteelBlue
-                    };
-                }
+                _activeLayer.Tiles[tileKey] = _tileBrushTool.SelectedBrush.TypeId;
+                UpdateTileVisual(tileKey, (int)tileCoord.X, (int)tileCoord.Y, _tileBrushTool.SelectedBrush.TypeId);
             }
             else if (_paintButton == MouseButton.Right)
             {
-                _activeLayer?.Tiles.Remove(key);
+                _activeLayer.Tiles[tileKey] = Models.TileBrush.Air.TypeId;
+                UpdateTileVisual(tileKey, (int)tileCoord.X, (int)tileCoord.Y, Models.TileBrush.Air.TypeId);
             }
 
-            RenderTiles();
+            IsDirty = true;
         }
-
 
         private void TileCanvas_MouseUp(object sender, MouseButtonEventArgs e)
         {
@@ -278,33 +292,6 @@ namespace XArch.AppShell.TileEditor
                 _isPainting = false;
                 _alreadyPainted.Clear();
             }
-        }
-
-
-        private void TileCanvas_MouseButtonDown(object sender, MouseButtonEventArgs e)
-        {
-            var tileCoord = GetWorldTileCoord(e);
-            var key = new Point(tileCoord.X, tileCoord.Y);
-
-            if (e.ChangedButton == MouseButton.Left)
-            {
-                if (!_activeLayer.Tiles.ContainsKey(key))
-                {
-                    _activeLayer.Tiles[key] = new Tile
-                    {
-                        X = (int)tileCoord.X,
-                        Y = (int)tileCoord.Y,
-                        Type = "Placed",
-                        Fill = Brushes.SteelBlue
-                    };
-                }
-            }
-            else if (e.ChangedButton == MouseButton.Right)
-            {
-                _activeLayer.Tiles.Remove(key);
-            }
-
-            RenderTiles();
         }
 
         private void TileScrollViewer_MouseWheel(object sender, MouseWheelEventArgs e)
@@ -333,7 +320,6 @@ namespace XArch.AppShell.TileEditor
 
 
                 e.Handled = true;
-                RenderTiles();
             }
         }
     }

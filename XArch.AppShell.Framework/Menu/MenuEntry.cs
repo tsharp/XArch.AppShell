@@ -24,6 +24,8 @@ namespace XArch.AppShell.Framework.Menu
             Order = order;
         }
 
+        public Type? ControlType { get; set; } = null;
+        public string Icon { get; set; } = string.Empty;
         public string Header { get; set; } = string.Empty;
         public ICommand? Command { get; set; }
         public bool IsSeparator { get; set; } = false;

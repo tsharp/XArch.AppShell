@@ -1,6 +1,6 @@
 ﻿namespace XArch.AppShell.Framework.UI
 {
-    public enum DockSide
+    public enum DockLocation
     {
         Left,
         Right,

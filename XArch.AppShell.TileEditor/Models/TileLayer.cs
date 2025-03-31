@@ -1,7 +1,6 @@
 ﻿using System.Collections.Generic;
-using System.Windows;
 
-namespace XArch.AppShell.TileEditor
+namespace XArch.AppShell.TileEditor.Models
 {
     public class TileLayer
     {
@@ -9,7 +8,8 @@ namespace XArch.AppShell.TileEditor
         public bool IsVisible { get; set; } = true;
         public int ZIndex { get; set; } = 0;
 
-        public Dictionary<Point, Tile> Tiles { get; } = new();
+        // Efficient storage: key = y * width + x, value = tile type ID
+        public Dictionary<int, int> Tiles { get; set; } = new();
     }
 
 }

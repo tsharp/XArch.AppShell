@@ -4,6 +4,8 @@ namespace XArch.AppShell.Framework.Menu
 {
     public interface IMenuProvider
     {
-        IEnumerable<MenuEntry> GetMenus();
+        string ContextMenuId { get; }
+        MenuType MenuType { get; }
+        IEnumerable<MenuEntry> GetMenuItems();
     }
 }

@@ -22,24 +22,13 @@
         </Grid.RowDefinitions>
 
         <!-- Menu -->
-        <Menu x:Name="AppMenu" Grid.Row="0" />
+        <Menu x:Name="AppMenu" Grid.Row="0" Visibility="Collapsed" IsMainMenu="True" />
 
         <!-- Ribbon -->
-        <TabControl Background="#eee" BorderThickness="0" Padding="4" x:Name="AppRibbon" Grid.Row="1" Visibility="Collapsed">
-            <TabItem Header="Home">
-                <ScrollViewer VerticalScrollBarVisibility="Auto">
-                    <WrapPanel Margin="4" Orientation="Horizontal" ItemHeight="24" ItemWidth="24">
-                        <Button Content="🟢" ToolTip="Green" Width="16" Height="16" />
-                        <Button Content="⚫" ToolTip="Grey" Width="16" Height="16" />
-                        <Button Content="⚙" ToolTip="Settings" Width="16" Height="16" />
-                        <!-- Add more small buttons -->
-                    </WrapPanel>
-                </ScrollViewer>
-            </TabItem>
-        </TabControl>
+        <TabControl Background="#eee" BorderThickness="0" Padding="2" x:Name="AppToolbar" Grid.Row="1" Visibility="Collapsed" />
 
         <!-- Main Content Placeholder -->
-        <local:AppShellDock x:Name="AppDock" Grid.Row="2" />
+        <ContentControl x:Name="AppDock" Grid.Row="2" />
 
         <!-- Status Bar -->
         <StatusBar x:Name="AppStatusBar" Grid.Row="3">

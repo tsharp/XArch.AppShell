@@ -3,9 +3,13 @@ using XArch.AppShell.Framework.Menu;
 
 namespace XArch.AppShell.Core
 {
-    internal class CoreMenuProvider : IMenuProvider
+    internal class CoreMainMenuProvider : IMenuProvider
     {
-        public IEnumerable<MenuEntry> GetMenus()
+        public MenuType MenuType => MenuType.MainMenu;
+
+        public string ContextMenuId => throw new NotImplementedException();
+
+        public IEnumerable<MenuEntry> GetMenuItems()
         {
             yield return new MenuEntry("_File", new[]
             {

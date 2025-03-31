@@ -54,6 +54,7 @@ namespace XArch.AppShell.Markdown
                 !uri.StartsWith("data:", StringComparison.OrdinalIgnoreCase))
             {
                 e.Cancel = true;
+                return;
 
                 //if (uri.StartsWith("https://"))
                 //{
@@ -84,17 +85,12 @@ namespace XArch.AppShell.Markdown
             UpdatePreview(Editor.Text);
         }
 
-        private Dictionary<string, string> ParseFrontMatterMap(string frontMatter)
-        {
-            return frontMatter.Split('\n')
-                .Select(l => l.Split(':', 2))
-                .Where(parts => parts.Length == 2)
-                .ToDictionary(
-                    parts => parts[0].Trim(),
-                    parts => parts[1].Trim());
-        }
-
-        private (string FrontMatter, string MarkdownContent) ParseFrontMatter(string fullText)
+        /// <summary>
+        /// NOTE: FRONTMATTER IS YAML AND IS NOT PART OF THE MARKDOWN SPEC
+        /// </summary>
+        /// <param name="fullText"></param>
+        /// <returns></returns>
+        private (string frontMatter, string markdownContent) ParseFrontMatter(string fullText)
         {
             var lines = fullText.Split('\n').Select(l => l.TrimEnd('\r')).ToList();
 
@@ -113,13 +109,13 @@ namespace XArch.AppShell.Markdown
         }
 
 
-        private void UpdatePreview(string markdown)
+        private void UpdatePreview(string fullText)
         {
             if (PreviewBrowser.CoreWebView2 == null) return;
 
-            var (frontMatter, content) = ParseFrontMatter(markdown);
+            var (frontMatter, markdownContent) = ParseFrontMatter(fullText);
 
-            var html = Markdown.ToHtml(content);
+            var html = Markdown.ToHtml(markdownContent);
             var styled = $@"
                 <html>
                 <head>
